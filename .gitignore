@@ -1,0 +1,4 @@
+exemples-donnees/*
+
+etats-des-lieux/*
+!etats-des-lieux/*.docx

@@ -1,0 +1,74 @@
+@startuml "diagramme-simple_modif-analyse"
+
+skinparam Shadowing false
+
+title
+
+Diagramme de séquences Frontend / Backend simplifié pour la modification d'une analyse
+
+end title
+
+actor Utilisateur
+participant Frontend
+participant Dynamic_Form
+participant Backend
+database BDD
+
+Utilisateur -> Frontend: Accès au formulaire (UPDATE)
+ref over Frontend, BDD
+  Initialisation des inputs <select> de types d'analyse et de templates
+  Voir diagramme d'ajout d'une analyse
+end ref
+ref over Frontend, BDD
+  Création et initialisation des champs de formulaire additionels (additional_fields)
+  Voir diagramme d'ajout d'une analyse
+end ref
+Frontend --> Backend: GET /samples/samples_analysis/:id
+Backend --> BDD: SELECT * FROM t_sample_analysis ...
+BDD --> Backend: id de l'analyse + liste valeurs
+Backend --> Frontend: Valeurs de l'analyse (JSON)
+Frontend -> Frontend: MAJ du DOM avec les valeurs de l'analyse
+Frontend --> Utilisateur: Formulaire pré-rempli avec les valeurs de l'analyse
+Utilisateur -> Frontend: Modification du formulaire
+alt Modification du template et/ou du type d'analyse
+  Frontend --> Utilisateur: Alerte : Cela supprimera les résultats déjà saisis
+  Utilisateur -> Frontend: Confirmation de la modification
+  alt Modification du type d'analayse
+    Frontend -> Backend: GET /samples/analysis_result_template?analyse_type=...
+    Backend -> BDD: UPDATE t_sample_analysis SET id_nomenclature_analysis_type=...
+    BDD --> Backend: id de l'analyse mise à jour + liste valeurs
+    Backend -> BDD: SELECT * FROM t_template_result ...
+    BDD --> Backend: Templates (liste)
+    Backend --> Frontend: Templates (liste)
+    Frontend --> Utilisateur: Liste templates MAJ
+  end
+  Utilisateur -> Frontend: Sélection d'un template
+  Frontend -> Backend: PUT /samples/samples_analysis/:id?major_update=true
+  Backend --> BDD: UPDATE t_sample_analysis SET id_template_result=...
+  BDD --> Backend: id de l'analyse mise à jour + liste valeurs
+  Backend -> BDD: SELECT additional_data_template FROM t_template_result ...
+  BDD -> Backend: additional_data_template (JSONB)
+  Backend --> BDD: UPDATE t_sample_analysis SET ...
+  note right
+  **Mise à des colonnes**
+    id_nomenclature_analysis_type,
+    id_template_result, additional_data
+  end note
+  BDD --> Backend: id de l'analyse mise à jour + liste valeurs
+  Backend --> Frontend: 201 Mise à jour OK (+Valeurs insérées en JSON)
+  Frontend --> Dynamic_Form: Initialisation
+  Dynamic_Form -> Backend: GET /gn_commons/additional_fields
+  Backend -> BDD: SELECT * FROM t_additional_fields ...
+  BDD --> Backend: Additional fields (JSONB)
+  Backend --> Dynamic_Form: Additional fields (JSON)
+  Dynamic_Form --> Frontend: MAJ du DOM
+  Frontend --> Utilisateur: Suite saisie OK
+end
+Utilisateur -> Frontend: Modification des autres champs
+Frontend -> Backend: PUT /samples/samples_analysis/:id
+Backend --> BDD: UPDATE t_sample_analysis
+BDD --> Backend: id de l'analyse mise à jour + liste valeurs
+Backend --> Frontend: 201 Mise à jour OK (liste des valeurs en JSON)
+Frontend --> Utilisateur: Analyse mise à jour avec succès
+
+@enduml

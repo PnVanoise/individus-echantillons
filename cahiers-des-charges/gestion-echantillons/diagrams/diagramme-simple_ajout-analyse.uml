@@ -1,0 +1,57 @@
+@startuml "diagramme-simple_ajout-analyse"
+
+skinparam Shadowing false
+
+title
+
+Diagramme de séquences Frontend / Backend simplifié pour l'ajout d'une analyse
+
+end title
+
+actor Utilisateur
+participant Frontend
+participant Dynamic_Form
+participant Backend
+database BDD
+
+Utilisateur -> Frontend: Accès au formulaire (ADD)
+Frontend -> Backend: GET /nomenclatures/nomenclatures/TYPE_ANALYSE
+Backend -> BDD: SELECT * FROM t_nomenclatures ...
+BDD --> Backend: Types analyse (liste)
+Backend --> Frontend: Types analyse (liste en JSON)
+Frontend --> Utilisateur: Liste types analyse MAJ
+Utilisateur -> Frontend: Sélection d'un type d'analyse
+Frontend -> Backend: GET /samples/analysis_result_template?analyse_type=...
+Backend -> BDD: SELECT * FROM t_template_result ...
+BDD --> Backend: Templates (liste)
+Backend --> Frontend: Templates (liste)
+Frontend --> Utilisateur: Liste templates MAJ
+Utilisateur -> Frontend: Sélection d'un template
+Frontend -> Backend: POST /samples/samples_analysis
+Backend -> BDD: SELECT additional_data_template FROM t_template_result ...
+BDD -> Backend: additional_data_template (JSONB)
+Backend -> BDD: INSERT INTO t_sample_analysis ...
+note right
+  **Initialisation des colonnes**
+  id_sample_analysis, id_sample,
+  id_nomenclature_analysis_type,
+  id_template_result, additional_data
+end note
+BDD --> Backend: id de l'analyse créée + liste valeurs insérées
+Backend --> Frontend: 201 Création OK (+Valeurs insérées en JSON)
+Frontend --> Dynamic_Form: Initialisation
+Dynamic_Form -> Backend: GET /gn_commons/additional_fields
+Backend -> BDD: SELECT * FROM t_additional_fields ...
+BDD --> Backend: Additional fiedds (JSONB)
+Backend --> Dynamic_Form: Additional fiedds (JSON)
+Dynamic_Form --> Frontend: MAJ du DOM
+Frontend --> Utilisateur: Suite saisie OK
+... Renseignement des autres champs avec les appels API nécessaires ...
+Utilisateur -> Frontend: Validation du formulaire
+Frontend -> Backend: PUT /samples/samples_analysis/:id
+Backend --> BDD: UPDATE t_sample_analysis ...
+BDD --> Backend: id de l'analyse mise à jour + liste valeurs
+Backend --> Frontend: 201 Mise à jour OK (liste des valeurs en JSON)
+Frontend --> Utilisateur: Analyse crée avec succès
+
+@enduml
